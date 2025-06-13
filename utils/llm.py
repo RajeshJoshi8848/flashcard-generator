@@ -1,30 +1,25 @@
-# utils/llm.py
+import requests
 
-from transformers import pipeline
-
-# Load the Hugging Face FLAN-T5 model
-generator = pipeline("text2text-generation", model="google/flan-t5-base")
-
-def generate_flashcards(text, subject_type=None):
+def generate_flashcards(text):
     prompt = f"""
-You are a helpful AI that generates study flashcards from educational material.
+You are a helpful AI that creates 10-15 flashcards in the format:
+Q: [question]
+A: [answer]
 
-Please generate 10–15 high-quality question-answer flashcards based on the content below.
+Focus on definitions, concepts, key facts, comparisons, or examples.
 
-✅ Focus on:
-- Definitions, facts, or key terms
-- Project details, concepts, and skills
-- Achievements, education, or data points
-
-📌 Format:
-Q1: [question]
-A1: [answer]
-Q2: [question]
-A2: [answer]
-...
-
-📄 Content:
-{text[:2500]}
+Text:
+{text[:4000]}
 """
-    result = generator(prompt, max_length=512, do_sample=False)[0]['generated_text']
-    return result
+
+    # Send prompt to local Ollama Mistral model
+    response = requests.post(
+        "http://localhost:11434/api/generate",
+        json={
+            "model": "mistral",
+            "prompt": prompt,
+            "stream": False
+        }
+    )
+
+    return response.json().get("response", "⚠️ Failed to generate flashcards.")
